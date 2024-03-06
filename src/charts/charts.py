@@ -4,6 +4,8 @@ import plotly.graph_objects as go
 import altair as alt
 import pandas as pd
 import numpy as np
+import datetime
+from plotly.subplots import make_subplots
 
 # Bar and line chart in one
 def default_chart(chart_title,chart_key,chart_df,chart_height=630, radio_horizontal=True, color_theme='streamlit'):
@@ -56,22 +58,19 @@ def twin_axis_chart():
 #     fig=px.bar(df,x='total_bill',y='day', orientation='h')
 #     st.write(fig)
 
-def horizontal_bar_chart_with_value():
-
-    # Example data
-    data = pd.DataFrame({
-        'Category': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
-        'Value': [10, 20, 15, 25, 45, 18, 34, 107, 58, 60]
-    })
-
-    # Calculate the cumulative sum for each category
-    data['Cumulative_Sum'] = data['Value'].cumsum()
+def horizontal_bar_chart_with_value(data, col_1):
+    if 'Total_Price' not in data.columns:
+        data['Total_Price'] = data['ItemQuantity'] * data['Item_UnitPrice']
+    data_1=data.groupby(col_1)['Total_Price'].sum().to_frame()
+    data = data_1.sort_values(by='Total_Price', ascending=False).head(10)
+    data = data.reset_index()
 
     # Altair chart with horizontal bars and totals
     chart = alt.Chart(data).mark_bar().encode(
-        x='Value:Q',
-        y='Category:N',
-        tooltip=['Category:N', 'Value:Q']
+        x='Total_Price:Q',
+        # y='ItemName:N',
+        y=alt.Y(f'{col_1}:N', sort=alt.EncodingSortField(field='Total_Price', op='sum', order='descending')),
+        tooltip=[f'{col_1}:N', 'Total_Price:Q']
     )
 
     text = chart.mark_text(
@@ -79,7 +78,7 @@ def horizontal_bar_chart_with_value():
         baseline='middle',
         dx=3  # Offset for text placement to the right of bars
     ).encode(
-        text='Value:Q'
+        text='Total_Price:Q'
     )
 
     chart_with_text = (chart + text).properties(
@@ -89,20 +88,87 @@ def horizontal_bar_chart_with_value():
     # Streamlit display
     st.altair_chart(chart_with_text, use_container_width=True)
 
-def trend_comparison_line_chart(df,df_delta,date_col, col_1 ,x_axis_title, y_axis_title,trend_1, trend_2, granularity='Monthly'):
-    granularity_dict = {'Weekly': 'W', 'Monthly': 'ME', 'Yearly': 'YE'}
-    df.set_index(date_col, inplace=True)
-    df_delta.set_index(date_col, inplace=True)
-    
-    df = df[[col_1]].resample(granularity_dict[granularity]).sum()
-    df_delta = df_delta[[col_1]].resample(granularity_dict[granularity]).sum()
-    time_frame = df.index.to_list()
+def trend_comparison_line_chart(df,df_delta,date_col, col_1 ,x_axis_title, y_axis_title,trend_1, trend_2, key, cumulative_sum=False, unique_count=False, new_customer=False):
+    granularity_dict = {'Daily': 'D','Weekly': 'W', 'Monthly': 'ME', 'Yearly': 'YE'}
+    _,_,_,col = st.columns(4)
+    with col:
+        gran = st.selectbox('', ('Daily', 'Weekly', 'Monthly', 'Yearly'), key=key)
+
+    if df.index.name != date_col and df_delta.index.name != date_col:
+        df.set_index(date_col, inplace=True)
+        df_delta.set_index(date_col, inplace=True)
+    if new_customer:
+        df= df[df.index == df['FirstOrderDate']][col_1]
+        df_delta= df_delta[df_delta.index == df_delta['FirstOrderDate']][col_1]
+        df = df.to_frame()
+        df_delta = df_delta.to_frame()
+    if unique_count:
+        df = df.groupby(date_col)[col_1].nunique().to_frame()
+        df_delta = df_delta.groupby(date_col)[col_1].nunique().to_frame()
+    df = df[[col_1]].resample(granularity_dict[gran]).sum()
+    df_delta = df_delta[[col_1]].resample(granularity_dict[gran]).sum()
+    if cumulative_sum:
+        df['Cumulative_Value'] = df[col_1].cumsum()
+        df_delta['Cumulative_Value'] = df_delta[col_1].cumsum()
+        col_1 = 'Cumulative_Value'
+    time_frame = df.index.to_list() # change timeframe
     trend1_values = df[col_1].to_list()
     trend2_values = df_delta[col_1].to_list()
 
     # Create traces for each trend
-    trace1 = go.Scatter(x=time_frame, y=trend1_values, mode='lines+markers', name=f'{trend_1}_{granularity}')
-    trace2 = go.Scatter(x=time_frame, y=trend2_values, mode='lines+markers', name=f'{trend_2}_{granularity}')
+    trace1 = go.Scatter(x=time_frame, y=trend1_values, mode='lines+markers', name=f'{trend_1}_{gran}')
+    trace2 = go.Scatter(x=time_frame, y=trend2_values, mode='lines+markers', name=f'{trend_2}_{gran}')
+
+    # Create layout
+    layout = go.Layout(
+        # title='Trend Comparison Chart',
+        xaxis=dict(title=x_axis_title),
+        yaxis=dict(title=y_axis_title),
+    )
+
+    # Create figure
+    fig = go.Figure(data=[trace1, trace2], layout=layout)
+
+    # Show the figure
+    # fig.show()
+    st.plotly_chart(fig, use_container_width=True)
+
+def trend_comparison_line_chart_aov(df,df_delta,date_col, col_1 ,col_2,x_axis_title, y_axis_title,trend_1, trend_2, key, cumulative_sum=False, unique_count=False):
+    df2=df
+    df2_delta = df_delta
+    granularity_dict = {'Daily': 'D','Weekly': 'W', 'Monthly': 'ME', 'Yearly': 'YE'}
+    _,_,_,col = st.columns(4)
+    with col:
+        gran = st.selectbox('', ('Monthly', 'Yearly'), key=key)
+    if df.index.name != date_col and df_delta.index.name != date_col:
+        df.set_index(date_col, inplace=True)
+        df_delta.set_index(date_col, inplace=True)
+
+    df = df[[col_1]].resample(granularity_dict[gran]).sum()
+    df_delta = df_delta[[col_1]].resample(granularity_dict[gran]).sum()
+
+    time_frame = df.index.to_list() # change timeframe
+    trend1_values = df[col_1].to_list()
+    trend2_values = df_delta[col_1].to_list()
+
+    if df2.index.name != date_col and df2_delta.index.name != date_col:
+        df2.set_index(date_col, inplace=True)
+        df2_delta.set_index(date_col, inplace=True)
+    if unique_count:
+        df2 = df2.groupby(date_col)[col_2].nunique().to_frame()
+        df2_delta = df2_delta.groupby(date_col)[col_2].nunique().to_frame()
+    df2 = df2[[col_2]].resample(granularity_dict[gran]).sum()
+    df2_delta = df2_delta[[col_2]].resample(granularity_dict[gran]).sum()
+
+    # time_frame = df2.index.to_list() # change timeframe
+    trend1_values2 = df2[col_2].to_list()
+    trend2_values2 = df2_delta[col_2].to_list()
+    
+    y1 = [a / b for a, b in zip(trend1_values, trend1_values2)]
+    y2 = [a / b for a, b in zip(trend2_values, trend2_values2)]
+    # Create traces for each trend
+    trace1 = go.Scatter(x=time_frame, y=y1, mode='lines+markers', name=f'{trend_1}_{gran}')
+    trace2 = go.Scatter(x=time_frame, y=y2, mode='lines+markers', name=f'{trend_2}_{gran}')
 
     # Create layout
     layout = go.Layout(
@@ -138,54 +204,102 @@ def grouped_bar_chart():
     )
     ])
 
-def grouped_bar_chart_with_line_chart():
-    np.random.seed(42)
+def grouped_bar_chart_with_line_chart(data):
+    # np.random.seed(42)
 
-    random_x= np.random.randint(1,101,100) 
-    random_y= np.random.randint(1,101,100)
+    # random_x= np.random.randint(1,101,100) 
+    # random_y= np.random.randint(1,101,100)
+    
+    data_cv1 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=2)]
+    data_price_cv1 = data_cv1[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
+    data_count_cv1 = data_cv1[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+    x = data_price_cv1.index.to_list()
 
-    x = ['A', 'B', 'C', 'D']
+    data_cv30 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=31)]
+    data_price_cv30 = data_cv30[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
+    data_count_cv30 = data_cv30[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+
+    data_cv60 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=61)]
+    data_price_cv60 = data_cv60[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
+    data_count_cv60 = data_cv60[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+
+    data_cv90 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=91)]
+    data_price_cv90 = data_cv90[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
+    data_count_cv90 = data_cv90[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+
+    data_cv180 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=181)]
+    data_price_cv180 = data_cv180[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
+    data_count_cv180 = data_cv180[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
 
     plot = go.Figure(data=[go.Bar(
-        name = 'Data 1',
+        name = 'CV1',
         x = x,
-        y = [100, 200, 500, 673],
+        y = [a/b for a,b in zip(data_price_cv1['Total_Price'].to_list(),data_count_cv1['CustomerID'].to_list())], 
     ),
         go.Bar(
-        name = 'Data 2',
+        name = 'CV30',
         x = x,
-        y = [56, 123, 982, 213],
+        y = [a/b for a,b in zip(data_price_cv30['Total_Price'].to_list(),data_count_cv30['CustomerID'].to_list())], 
     ),
-        go.Line(
-        name= 'Data_3',
-        x=x,
-        y=[45,92,84,123],
-    )
+        go.Bar(
+        name = 'CV60',
+        x = x,
+        y = [a/b for a,b in zip(data_price_cv60['Total_Price'].to_list(),data_count_cv60['CustomerID'].to_list())], 
+    ),
+        go.Bar(
+        name = 'CV90',
+        x = x,
+        y = [a/b for a,b in zip(data_price_cv90['Total_Price'].to_list(),data_count_cv90['CustomerID'].to_list())], 
+    ),
+        go.Bar(
+        name = 'CV180',
+        x = x,
+        y = [a/b for a,b in zip(data_price_cv180['Total_Price'].to_list(),data_count_cv180['CustomerID'].to_list())], 
+    ),
+    #     go.Line(
+    #     name= 'Total customers',
+    #     x=x,
+    #     y=data_count_cv1['CustomerID'].to_list(), #values here 
+    # )
     ])
                     
     st.plotly_chart(plot, use_container_width=True)
 
-def bar_chart_with_line_chart():
-    np.random.seed(42)
+def bar_chart_with_line_chart(data, var):
+    data['total'] = data['CV_90'] * data['customer_count']
+    data = data.groupby(var)[['total','customer_count']].sum().reset_index()
+    data['CV90'] = data['total']/data['customer_count']
+    if data.shape[0] > 10:
+        data_sorted = data.sort_values(by='CV90', ascending=True).reset_index()
+        data_sorted = data_sorted.head(10)
+    else:data_sorted = data.sort_values(by='CV90', ascending=True).reset_index()
+    x = data_sorted[var]
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    random_x= np.random.randint(1,101,100) 
-    random_y= np.random.randint(1,101,100)
+    # Add traces for each y-axis
+    fig.add_trace(go.Bar(x=x, y=data_sorted['CV90'], name='Y1'), secondary_y=False)
+    fig.add_trace(go.Line(x=x, y=data_sorted['customer_count'], name='Y2'), secondary_y=True)
 
-    x = ['A', 'B', 'C', 'D']
-
-    plot = go.Figure(data=[go.Bar(
-        name = 'Data 1',
-        x = x,
-        y = [100, 200, 500, 673],
-    ),
-        go.Line(
-        name= 'Data_2',
-        x=x,
-        y=[45,92,84,123],
+    # Update layout with axis labels
+    fig.update_layout(
+        xaxis=dict(title='X-axis'),
+        yaxis=dict(title='Y1-axis', side='left'),
+        yaxis2=dict(title='Y2-axis', side='right')
     )
-    ])
+
+    # plot = go.Figure(data=[go.Bar(
+    #     name = 'CV90',
+    #     x = x,
+    #     y = data['CV90'].to_list(),
+    # ),
+    #     go.Line(
+    #     name= 'CustomerID',
+    #     x=x,
+    #     y=data['customer_count'].to_list(),
+    # )
+    # ])
                     
-    st.plotly_chart(plot, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def horizontal_grouped_bar_chart():
@@ -212,12 +326,69 @@ def horizontal_grouped_bar_chart():
                     
     st.plotly_chart(plot, use_container_width=True)
 
-def pie_chart(df):
-    cat_pie = px.pie(data_frame=df.groupby(['Country'])['Net Sales'].sum().abs().reset_index(),
+def horizontal_grouped_bar_chart_channel(data):
+    # x = ['A', 'B', 'C', 'D']
+
+    data_cv1 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=2)]
+    data_price_cv1 = data_cv1[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
+    data_count_cv1 = data_cv1[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
+    x = data_price_cv1.index.to_list()
+
+    data_cv30 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=31)]
+    data_price_cv30 = data_cv30[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
+    data_count_cv30 = data_cv30[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
+
+    data_cv60 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=61)]
+    data_price_cv60 = data_cv60[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
+    data_count_cv60 = data_cv60[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
+
+    data_cv90 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=91)]
+    data_price_cv90 = data_cv90[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
+    data_count_cv90 = data_cv90[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
+
+    data_cv180 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=181)]
+    data_price_cv180 = data_cv180[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
+    data_count_cv180 = data_cv180[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
+    
+    plot = go.Figure(data=[go.Bar(
+        name = 'CV1',
+        x = [a/b for a,b in zip(data_price_cv1['Total_Price'].to_list(),data_count_cv1['CustomerID'].to_list())],
+        y = x,
+        orientation='h'
+    ),
+        go.Bar(
+        name = 'CV30',
+        x = [a/b for a,b in zip(data_price_cv30['Total_Price'].to_list(),data_count_cv30['CustomerID'].to_list())],
+        y = x,
+        orientation='h'
+    ),
+        go.Bar(
+        name = 'CV60',
+        x = [a/b for a,b in zip(data_price_cv60['Total_Price'].to_list(),data_count_cv60['CustomerID'].to_list())],
+        y = x,
+        orientation='h'
+    ),
+        go.Bar(
+        name = 'CV90',
+        x = [a/b for a,b in zip(data_price_cv90['Total_Price'].to_list(),data_count_cv90['CustomerID'].to_list())],
+        y = x,
+        orientation='h'
+    ),
+        go.Bar(
+        name = 'CV180',
+        x = [a/b for a,b in zip(data_price_cv180['Total_Price'].to_list(),data_count_cv180['CustomerID'].to_list())],
+        y = x,
+        orientation='h'
+    ),
+    ])
+                    
+    st.plotly_chart(plot, use_container_width=True)    
+
+def pie_chart(df, var):
+    cat_pie = px.pie(data_frame=df.groupby(var)['CustomerID'].nunique().to_frame().reset_index(),
                     # names='Product Category',
                     hole=0.5,
-                    color='Country',
-                    values='Net Sales',
-                    title='Country'
+                    color=var,
+                    values='CustomerID'
                 )
     st.plotly_chart(cat_pie, theme='streamlit', use_container_width=True)
