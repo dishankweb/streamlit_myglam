@@ -97,7 +97,12 @@ customer_cohort_retention_2a = pd.read_csv('src/data/customer_cohort_retention_2
 RecencyBucket_rev = pd.read_csv('src/data/RecencyBucket_rev.csv')
 Customer_attribute_4yr_rev = pd.read_csv('src/data/Customer_attribute_4yr_rev.csv')
 AOVquart = pd.read_csv('src/data/AOVquart.csv')
-customer_profile_by_channel_comparison = pd.read_csv('src/data/customer_profile_by_channel_comparison.csv')
+customer_profile_by_channel_comparison_1 = pd.read_csv('src/data/customer_profile_by_channel_comparison_part1.csv')
+customer_profile_by_channel_comparison_2 = pd.read_csv('src/data/customer_profile_by_channel_comparison_part2.csv')
+customer_profile_by_channel_comparison_3 = pd.read_csv('src/data/customer_profile_by_channel_comparison_part3.csv')
+customer_profile_by_channel_comparison = pd.concat([customer_profile_by_channel_comparison_1, customer_profile_by_channel_comparison_2, customer_profile_by_channel_comparison_3], ignore_index=True)
+
+
 Order_Attribute = pd.read_csv('src/data/Order_Attribute.csv')
 
 # Main df read
