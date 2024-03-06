@@ -4,3 +4,14 @@ div.st-emotion-cache-1fclxab{
 div.st-emotion-cache-1xarl3l{
     font-size: 3.25rem
 }
+
+/* div.st-emotion-cache-183lzff{
+    font-size: 20px;
+} */
+div.st-emotion-cache-xt1yv6 {
+    border: 4px solid rgba(49, 51, 63, 0.2);
+    border-radius: 0.5rem;
+    padding: calc(1em - 1px);
+    height: 50px;
+    overflow: auto;
+}
