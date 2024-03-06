@@ -21,14 +21,14 @@ date_today = datetime.datetime.now().date()
 date_today = datetime.datetime(2023, 10, 20)
 
 def header(url, size=24):
-     st.markdown(f'<p style="background-color:#8eb5f5;color:#FFFFFF;font-size:{size}px;border-radius:2%;text-align:center; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
+     st.markdown(f'<p style="background-color:#cdd0d4;color:#000000;font-size:{size}px;border-radius:2%;text-align:center; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
     #  st.markdown(f'<p style="background-color:#0066cc;color:#FFFFFF;font-size:24px;border-radius:2%;">{url}</p>', unsafe_allow_html=True)
 
 def header_chart(url, size=24):
-     st.markdown(f'<p style="background-color:#0066cc;color:#FFFFFF;font-size:{size}px;border-radius:2%;text-align:center; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
+     st.markdown(f'<p style="background-color:#cdd0d4;color:#000000;font-size:{size}px;border-radius:2%;text-align:center; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
 
 def header_left(url, size=24):
-     st.markdown(f'<p style="background-color:#0066cc;color:#FFFFFF;font-size:{size}px;border-radius:2%;text-align:left; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
+     st.markdown(f'<p style="background-color:#cdd0d4;color:#000000;font-size:{size}px;border-radius:2%;text-align:left; font-weight: bold;">{url}</p>', unsafe_allow_html=True)
 
 st.set_page_config(layout="wide", page_title="E-commerce Dashboard")
 
@@ -257,7 +257,7 @@ with tab1:
         # st.text('Revenue trend & comparison with the previous period')   
         trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='Total_Price',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', key='tab1_1')
+                                    trend_1='Revenue', trend_2='Revenue', key='tab1_1')
              
     with st.container(height=620):
         # st.text('Revenue trend & comparison with the previous period - Cumulative')
@@ -265,7 +265,7 @@ with tab1:
         header_chart('Revenue trend & comparison with the previous period - Cumulative') 
         trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='Total_Price',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', key='tab1_2', cumulative_sum=True)
+                                    trend_1='Revenue_cumulative', trend_2='Revenue_cumulative', key='tab1_2', cumulative_sum=True)
     
     with st.container(height=620):
         # st.text('Total Orders trend and Comparison with the previous period')  
@@ -274,7 +274,7 @@ with tab1:
         # trend_comparison_line_chart()
         trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='OrderID',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', key='tab1_3', unique_count=True)
+                                    trend_1='Total_orders', trend_2='Total_orders', key='tab1_3', unique_count=True)
 
     with st.container(height=620):
         # st.text('Average Order Value trend and Comparison with the previous period')   
@@ -283,7 +283,7 @@ with tab1:
         # trend_comparison_line_chart()
         trend_comparison_line_chart_aov(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='Total_Price',col_2='OrderID',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', key='tab1_4', unique_count=True)
+                                    trend_1='Average_order_value', trend_2='Average_order_value', key='tab1_4', unique_count=True)
 
 
     with st.container(height=620):
@@ -292,7 +292,7 @@ with tab1:
         header_chart('New Customers trend and Comparison with the previous period')
         trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='CustomerID',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', key='tab1_5', unique_count=True, new_customer=True)
+                                    trend_1='New_customers', trend_2='New_customers', key='tab1_5', unique_count=True, new_customer=True)
         # trend_comparison_line_chart()
     
     with st.container(height=660):
@@ -427,11 +427,19 @@ with tab4:
         data_2 = pd.read_csv('src/data/df_part2.csv')
         data_3 = pd.read_csv('src/data/df_part3.csv')
         data = pd.concat([data_1, data_2, data_3], ignore_index=True)
-
+        _,_,_,col_4 = st.columns(4)
+        with col_4:
+            channel_filter = st.selectbox('Channel:',data['OrderSource'].unique(),key='tab4_22')
+            data = data[data['OrderSource']==channel_filter]
+        
         data['Total_price'] = data['ItemQuantity'] * data['Item_UnitPrice']
-        data = data.groupby('ItemName').agg({'Total_price':'mean', 'OrderID':'count'}).sort_values(by='Total_price', ascending=False)
+        data = data.groupby('ItemName').agg({'Total_price':'mean', 'OrderID':'count'})
         data['avg order value'] = data['Total_price']/data['OrderID']
-        st.dataframe(data.drop(columns=['Total_price']).rename({'OrderID': 'customer count'}), use_container_width=True)
+        data = data.drop(columns=['Total_price']).rename({'OrderID': 'customer count'}).sort_values(by='avg order value', ascending=False)
+        data = data[data['OrderID']>0]
+        data['avg order value'] = data['avg order value'].apply(lambda x : int(x))
+           
+        st.dataframe(data, use_container_width=True)
 
 with tab5:
     # st.text('Worst Cohort View')
@@ -439,13 +447,13 @@ with tab5:
 
     with st.container(height=600):
         # st.text('Worst Channel Cohorts')
-        st.markdown(f'**Worst Channel Cohorts**', help = 'definition')
-        bar_chart_with_line_chart(worst_channel_cohort_agg, 'marketing_channel')
+        header_chart('Worst Channel Cohorts')
+        bar_chart_with_line_chart(worst_channel_cohort_agg, 'marketing_channel', 'Channel')
         
     with st.container(height=600):
         # st.text('Worst City Cohorts')  
-        st.markdown(f'**Worst City Cohorts**', help = 'definition')
-        bar_chart_with_line_chart(worst_city_cohort_agg, 'CustomerCity')
+        header_chart('Worst City Cohorts')
+        bar_chart_with_line_chart(worst_city_cohort_agg, 'CustomerCity', 'City')
         
 with tab6:
     # st.text('Cohort Analysis')
@@ -453,7 +461,7 @@ with tab6:
 
     with st.container(height=600):
         # st.text('Customer Retention by First Order')
-        st.markdown(f'**Customer Retention by First Order**', help = 'definition')
+        header_chart('Customer Retention by First Order')
         customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']>(date_today-relativedelta(months=12))]
         customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']<date_today].reset_index(drop=True)
         customer_cohort_retention_1a['first_month'] = customer_cohort_retention_1a['first_month'].apply(lambda x: pd.to_datetime(x).date())
@@ -461,7 +469,7 @@ with tab6:
         
     with st.container(height=600):
         # st.text('Retention Cohorts')
-        st.markdown(f'**Retention Cohorts**', help = 'definition')
+        header_chart('Retention Cohorts')
         customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']>(date_today-relativedelta(months=12))]
         customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']<date_today].reset_index(drop=True)
         customer_cohort_retention_1b['first_month'] = customer_cohort_retention_1b['first_month'].apply(lambda x: pd.to_datetime(x).date())
@@ -469,7 +477,7 @@ with tab6:
 
     with st.container(height=600):
         # st.text('Customer Average monthly Revenue')
-        st.markdown(f'**Customer Average monthly Revenue**', help = 'definition')
+        header_chart('Customer Average monthly Revenue')
         customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']>(date_today-relativedelta(months=12))]
         customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']<date_today].reset_index(drop=True)
         customer_cohort_retention_1c['first_month'] = customer_cohort_retention_1c['first_month'].apply(lambda x: pd.to_datetime(x).date())
@@ -483,21 +491,21 @@ with tab7:
 
     with st.container(height=600):
         # st.text('Customer Retention by City')
-        st.markdown(f'**Customer Retention by City**', help = 'definition')
+        header_chart('Customer Retention by City')
         customer_cohort_retention_2a = customer_cohort_retention_2a.sort_values(by='month_0_count', ascending=False).reset_index(drop=True)
         st.dataframe(customer_cohort_retention_2a)
         
     with st.container(height=600):
         # st.text('Customer Percentage Retention by City')
-        st.markdown(f'**Customer Percentage Retention by City**', help = 'definition')  
+        header_chart('Customer Percentage Retention by City')  
 
     with st.container(height=600):
         # st.text('Channel-wise Cohorts')  
-        st.markdown(f'**Channel-wise Cohorts**', help = 'definition')
+       header_chart('Channel-wise Cohorts')
     
     with st.container(height=600):
         # st.text('Channel-wise Cohorts - Customer count')
-        st.markdown(f'**Channel-wise Cohorts - Customer count**', help = 'definition')
+        header_chart('Channel-wise Cohorts - Customer count')
 
 with tab8:
     
@@ -506,24 +514,24 @@ with tab8:
 
     with st.container(height=600):
         # st.text('Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days')   
-        st.markdown(f'**Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days**', help = 'definition')
+        header_chart('Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days')
         # RecencyBucket_rev
         pie_chart(RecencyBucket_rev, 'RecencyBucket')
         
     with st.container(height=620):
         # st.text('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+')
-        st.markdown(f'**Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+**', help = 'definition')
+        header_chart('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+')
         col_1,col_2 = st.columns(2)
         with col_1:
-            channel = st.selectbox('',Customer_attribute_4yr_rev['marketing_channel'].unique(), key='tab_8_1')
+            channel = st.selectbox('Channel',Customer_attribute_4yr_rev['marketing_channel'].unique(), key='tab_8_1')
         with col_2:
-            tier = st.selectbox('',Customer_attribute_4yr_rev['Tier'].unique(), key='tab_8_2')
+            tier = st.selectbox('Tier',Customer_attribute_4yr_rev['Tier'].unique(), key='tab_8_2')
         Customer_attribute_4yr_rev = Customer_attribute_4yr_rev[Customer_attribute_4yr_rev['marketing_channel']==channel]
         Customer_attribute_4yr_rev = Customer_attribute_4yr_rev[Customer_attribute_4yr_rev['Tier']==tier]
 
         pie_chart(Customer_attribute_4yr_rev,'FrequencyBucket') 
 
     with st.container(height=600):
-        st.text('Audience Split by 4 AOV quartiles')
-        st.markdown(f'**Audience Split by 4 AOV quartiles**', help = 'definition')
+        # st.text('Audience Split by 4 AOV quartiles')
+        header_chart('Audience Split by 4 AOV quartiles')
         pie_chart(AOVquart,'quartile')
