@@ -103,7 +103,10 @@ customer_profile_by_channel_comparison_3 = pd.read_csv('src/data/customer_profil
 customer_profile_by_channel_comparison = pd.concat([customer_profile_by_channel_comparison_1, customer_profile_by_channel_comparison_2, customer_profile_by_channel_comparison_3], ignore_index=True)
 
 
-Order_Attribute = pd.read_csv('src/data/Order_Attribute.csv')
+Order_Attribute_1 = pd.read_csv('src/data/Order_Attribute_part1.csv')
+Order_Attribute_2 = pd.read_csv('src/data/Order_Attribute_part2.csv')
+Order_Attribute_3 = pd.read_csv('src/data/Order_Attribute_part3.csv')
+Order_Attribute = pd.concat([Order_Attribute_1, Order_Attribute_2, Order_Attribute_3], ignore_index=True)
 
 # Main df read
 # df = pd.read_csv('fake_ecom_data.csv', encoding='utf-8')
