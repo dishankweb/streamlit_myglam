@@ -117,7 +117,7 @@ def trend_comparison_line_chart(df,df_delta,date_col, col_1 ,x_axis_title, y_axi
 
     # Create traces for each trend
     trace1 = go.Scatter(x=time_frame, y=trend1_values, mode='lines+markers', name=f'{trend_1}_{gran}')
-    trace2 = go.Scatter(x=time_frame, y=trend2_values, mode='lines+markers', name=f'{trend_2}_{gran}')
+    trace2 = go.Scatter(x=time_frame, y=trend2_values, mode='lines+markers', name=f'{trend_2}_{gran}_previous')
 
     # Create layout
     layout = go.Layout(
@@ -224,7 +224,7 @@ def grouped_bar_chart_with_line_chart_2(data):
 
     st.plotly_chart(plot, use_container_width=True)
 
-def bar_chart_with_line_chart(data, var):
+def bar_chart_with_line_chart(data, var,x_title):
     data['total'] = data['CV_90'] * data['customer_count']
     data = data.groupby(var)[['total','customer_count']].sum().reset_index()
     data['CV90'] = data['total']/data['customer_count']
@@ -236,14 +236,14 @@ def bar_chart_with_line_chart(data, var):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Add traces for each y-axis
-    fig.add_trace(go.Bar(x=x, y=data_sorted['CV90'], name='Y1'), secondary_y=False)
-    fig.add_trace(go.Line(x=x, y=data_sorted['customer_count'], name='Y2'), secondary_y=True)
+    fig.add_trace(go.Bar(x=x, y=data_sorted['CV90'], name='CV90'), secondary_y=False)
+    fig.add_trace(go.Line(x=x, y=data_sorted['customer_count'], name='Total Customers'), secondary_y=True)
 
     # Update layout with axis labels
     fig.update_layout(
-        xaxis=dict(title='X-axis'),
-        yaxis=dict(title='Y1-axis', side='left'),
-        yaxis2=dict(title='Y2-axis', side='right')
+        xaxis=dict(title=x_title),
+        yaxis=dict(title='Value', side='left'),
+        yaxis2=dict(title='Number of Customers', side='right')
     )
 
     # plot = go.Figure(data=[go.Bar(
@@ -345,9 +345,10 @@ def horizontal_grouped_bar_chart_channel(data):
 
 def pie_chart(df, var):
     cat_pie = px.pie(data_frame=df.groupby(var)['CustomerID'].nunique().to_frame().reset_index(),
-                    # names='Product Category',
+                    names=var,
                     hole=0.5,
                     color=var,
-                    values='CustomerID'
+                    values='CustomerID',
                 )
+    # cat_pie.update_layout(showlegend=True)
     st.plotly_chart(cat_pie, theme='streamlit', use_container_width=True)
