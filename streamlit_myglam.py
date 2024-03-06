@@ -62,7 +62,10 @@ with open('style.css') as f:
 Ecom_Ordertable = pd.read_csv('src/data/Ecom_Ordertable.csv', encoding='utf-8', parse_dates=['OrderDate', 'FirstOrderDate'])
 Ecom_CustomerAttribute = pd.read_csv('src/data/Ecom_CustomerAttribute.csv', encoding='utf-8', parse_dates=[])
 # Ecom_Ordertable['OrderDate'] = Ecom_Ordertable['OrderDate'].apply(date_change_timedelta) # date string to timedelta
-Ecom_Orderlinetable = pd.read_csv('src/data/Ecom_Orderlinetable.csv', encoding='utf-8', parse_dates=['OrderDate'])
+# Ecom_Orderlinetable = pd.read_csv('src/data/Ecom_Orderlinetable.csv', encoding='utf-8', parse_dates=['OrderDate'])
+Ecom_Orderlinetable_1 = pd.read_csv('src/data/Ecom_Orderlinetable_1.csv', encoding='utf-8', parse_dates=['OrderDate'])
+Ecom_Orderlinetable_2 = pd.read_csv('src/data/Ecom_Orderlinetable_2.csv', encoding='utf-8', parse_dates=['OrderDate'])
+Ecom_Orderlinetable = pd.concat([Ecom_Orderlinetable_1, Ecom_Orderlinetable_2], ignore_index=True)
 worst_channel_cohort_agg = pd.read_csv('src/data/worst_channel_cohort_agg.csv',encoding='utf-8', parse_dates=['FirstOrderDate'])
 worst_city_cohort_agg = pd.read_csv('src/data/worst_city_cohort_agg.csv', encoding='utf-8', parse_dates=['FirstOrderDate'])
 customer_cohort_retention_1a = pd.read_csv('src/data/customer_cohort_retention_1a.csv')
