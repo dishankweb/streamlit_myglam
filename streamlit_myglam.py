@@ -11,13 +11,14 @@ import uuid
 import altair as alt
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta
+from plotly.subplots import make_subplots
 
 # src imports
 from src.charts.tile import kpi_tile
-from src.charts.charts import default_chart,twin_axis_chart, pie_chart, horizontal_bar_chart_with_value,bar_chart_with_line_chart, trend_comparison_line_chart, grouped_bar_chart, grouped_bar_chart_with_line_chart,horizontal_grouped_bar_chart
+from src.charts.charts import default_chart,twin_axis_chart, pie_chart, horizontal_bar_chart_with_value,bar_chart_with_line_chart, trend_comparison_line_chart,trend_comparison_line_chart_aov, grouped_bar_chart, grouped_bar_chart_with_line_chart,horizontal_grouped_bar_chart, horizontal_grouped_bar_chart_channel
 
 date_today = datetime.datetime.now().date()
-date_today = datetime.datetime(2023, 10, 12)
+date_today = datetime.datetime(2023, 10, 20)
 
 
 st.set_page_config(layout="wide", page_title="E-commerce Dashboard")
@@ -59,7 +60,18 @@ with open('style.css') as f:
 
 # data import
 Ecom_Ordertable = pd.read_csv('src/data/Ecom_Ordertable.csv', encoding='utf-8', parse_dates=['OrderDate', 'FirstOrderDate'])
+Ecom_CustomerAttribute = pd.read_csv('src/data/Ecom_CustomerAttribute.csv', encoding='utf-8', parse_dates=[])
 # Ecom_Ordertable['OrderDate'] = Ecom_Ordertable['OrderDate'].apply(date_change_timedelta) # date string to timedelta
+Ecom_Orderlinetable = pd.read_csv('src/data/Ecom_Orderlinetable.csv', encoding='utf-8', parse_dates=['OrderDate'])
+worst_channel_cohort_agg = pd.read_csv('src/data/worst_channel_cohort_agg.csv',encoding='utf-8', parse_dates=['FirstOrderDate'])
+worst_city_cohort_agg = pd.read_csv('src/data/worst_city_cohort_agg.csv', encoding='utf-8', parse_dates=['FirstOrderDate'])
+customer_cohort_retention_1a = pd.read_csv('src/data/customer_cohort_retention_1a.csv')
+customer_cohort_retention_1b = pd.read_csv('src/data/customer_cohort_retention_1b.csv')
+customer_cohort_retention_1c = pd.read_csv('src/data/customer_cohort_retention_1c.csv')
+customer_cohort_retention_2a = pd.read_csv('src/data/customer_cohort_retention_2a.csv')
+RecencyBucket_rev = pd.read_csv('src/data/RecencyBucket_rev.csv')
+Customer_attribute_4yr_rev = pd.read_csv('src/data/Customer_attribute_4yr_rev.csv')
+AOVquart = pd.read_csv('src/data/AOVquart.csv')
 
 # Main df read
 # df = pd.read_csv('fake_ecom_data.csv', encoding='utf-8')
@@ -76,18 +88,24 @@ with col2:
 
 if option == 'Last 7 Days': 
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today,option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 elif option == 'Last 30 Days':
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today,option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 elif option == 'This Month':
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today,option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 elif option == 'This Quarter':
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today, option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 elif option == 'This Year':
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today, option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 elif option == 'All Data':
     pass
 elif option == 'Custom Range':
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today, option=option)
+    Ecom_Orderlinetable,Ecom_Orderlinetable_delta = previous_time_delta_percentage(dataframe=Ecom_Orderlinetable, date_today=date_today,option=option)
 else:
     pass
 
@@ -107,8 +125,9 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([s.center(15,"\u2001") 
 total_revenue = Ecom_Ordertable['Total_Price'].sum()
 total_orders = Ecom_Ordertable['OrderID'].nunique()
 aov = total_revenue / total_orders if total_orders else 0
-new_customers = len(Ecom_Ordertable[Ecom_Ordertable['OrderDate'] == Ecom_Ordertable['FirstOrderDate']])
-repeat_customers = len(Ecom_Ordertable[Ecom_Ordertable['OrderDate'] != Ecom_Ordertable['FirstOrderDate']])
+new_customers = Ecom_Ordertable[Ecom_Ordertable['OrderDate'] == Ecom_Ordertable['FirstOrderDate']]['CustomerID'].nunique()
+repeat_customers = Ecom_Ordertable[Ecom_Ordertable['OrderDate'] != Ecom_Ordertable['FirstOrderDate']]['CustomerID'].nunique()
+discounted_order = Ecom_Ordertable[Ecom_Ordertable['Total_DiscVal']>0]['OrderID'].nunique()*100/total_orders
 
 # # total_orders = df['Order ID'].nunique()
 # total_orders_website = df.loc[df['Sales Channel']== 'Mobile App', :]['Order ID'].nunique()
@@ -121,8 +140,8 @@ repeat_customers = len(Ecom_Ordertable[Ecom_Ordertable['OrderDate'] != Ecom_Orde
 # aov_marketplace = total_revenue_marketplace / total_orders_marketplace if total_orders_marketplace else 0
 
 # Delta KPIs
-new_customers_delta = Ecom_Ordertable_delta[Ecom_Ordertable_delta['OrderDate'] == Ecom_Ordertable_delta['FirstOrderDate']].shape[0]
-repeat_customers_delta = Ecom_Ordertable_delta[Ecom_Ordertable_delta['OrderDate'] != Ecom_Ordertable_delta['FirstOrderDate']].shape[0]
+new_customers_delta = Ecom_Ordertable_delta[Ecom_Ordertable_delta['OrderDate'] == Ecom_Ordertable_delta['FirstOrderDate']]['CustomerID'].nunique()
+repeat_customers_delta = Ecom_Ordertable_delta[Ecom_Ordertable_delta['OrderDate'] != Ecom_Ordertable_delta['FirstOrderDate']]['CustomerID'].nunique()
 
 total_orders_delta = Ecom_Ordertable_delta['OrderID'].nunique()
 # total_orders_website_delta = Ecom_Ordertable_delta.loc[Ecom_Ordertable_delta['Sales Channel']== 'Mobile App', :]['Order ID'].nunique()
@@ -133,6 +152,7 @@ total_revenue_delta = Ecom_Ordertable_delta['Total_Price'].sum()
 aov_delta = total_revenue_delta / total_orders_delta if total_orders else 0
 # aov_website_delta = total_revenue_website_delta / total_orders_website_delta if total_orders_website_delta else 0
 # aov_marketplace_delta = total_revenue_marketplace_delta / total_orders_marketplace_delta if total_orders_marketplace_delta else 0
+discounted_order_delta = Ecom_Ordertable_delta[Ecom_Ordertable_delta['Total_DiscVal']>0]['OrderID'].nunique()*100/total_orders_delta
     
 with tab1:
     kpi1, kpi2, kpi3 = st.columns(3) # row 1 - 3 KPIs
@@ -162,7 +182,7 @@ with tab1:
     
         with kpi4:
             kpi_tile(kpi4,tile_text='New Customers', tile_label='', tile_value=new_customers,
-                     tile_value_prefix='',delta_value=0,integer=True) #(new_customers-new_customers_delta)*100/new_customers_delta
+                     tile_value_prefix='',delta_value=(new_customers-new_customers_delta)*100/new_customers_delta,integer=True) 
             # tile = kpi4.container(height=240)
             # tile.header('Blended New Customers')
             # tile.metric(label="", value=f"{new_customers:,}", delta='6%') 
@@ -175,8 +195,9 @@ with tab1:
             # tile.metric(label="", value=f"{math.floor(total_orders*0.75):,}", delta='6%')     
 
         with kpi6:
-            kpi_tile(kpi6,tile_text='Discounted Orders', tile_label='', tile_value=1.3,
-                     tile_value_prefix='',delta_value=0.8,integer=False, delta_color_inversion='inverse', tile_value_suffix='%')
+            kpi_tile(kpi6,tile_text='Discounted Orders', tile_label='', tile_value=discounted_order,
+                     tile_value_prefix='',delta_value=(discounted_order-discounted_order_delta)*100/discounted_order_delta,
+                     integer=False, delta_color_inversion='inverse', tile_value_suffix='%')
             # tile = kpi6.container(height=240)
             # tile.header('Blended Cancellation Rate')
             # tile.metric(label="", value=f"{math.floor(total_orders*0.75):,}", delta='6%', delta_color='inverse') 
@@ -185,36 +206,47 @@ with tab1:
         st.text('How our key metrics are trending?')    
         
 
-    with st.container(height=600):
+    with st.container(height=620):
         st.text('Revenue trend & comparison with the previous period')   
         trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
                                     col_1='Total_Price',x_axis_title='Date', y_axis_title='revenue',
-                                    trend_1='trend_1', trend_2='trend_2', granularity='Monthly')
+                                    trend_1='trend_1', trend_2='trend_2', key='tab1_1')
              
-    with st.container(height=600):
+    with st.container(height=620):
         st.text('Revenue trend & comparison with the previous period - Cumulative')   
-        # trend_comparison_line_chart()
+        trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
+                                    col_1='Total_Price',x_axis_title='Date', y_axis_title='revenue',
+                                    trend_1='trend_1', trend_2='trend_2', key='tab1_2', cumulative_sum=True)
     
-    with st.container(height=600):
+    with st.container(height=620):
         st.text('Total Orders trend and Comparison with the previous period')   
         # trend_comparison_line_chart()
+        trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
+                                    col_1='OrderID',x_axis_title='Date', y_axis_title='revenue',
+                                    trend_1='trend_1', trend_2='trend_2', key='tab1_3', unique_count=True)
 
-    with st.container(height=600):
+    with st.container(height=620):
         st.text('Average Order Value trend and Comparison with the previous period')   
         # trend_comparison_line_chart()
+        trend_comparison_line_chart_aov(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
+                                    col_1='Total_Price',col_2='OrderID',x_axis_title='Date', y_axis_title='revenue',
+                                    trend_1='trend_1', trend_2='trend_2', key='tab1_4', unique_count=True)
 
 
-    with st.container(height=600):
-        st.text('New Customers trend and Comparison with the previous period')   
+    with st.container(height=620):
+        st.text('New Customers trend and Comparison with the previous period')
+        trend_comparison_line_chart(df=Ecom_Ordertable,df_delta=Ecom_Ordertable_delta,date_col='OrderDate', 
+                                    col_1='CustomerID',x_axis_title='Date', y_axis_title='revenue',
+                                    trend_1='trend_1', trend_2='trend_2', key='tab1_5', unique_count=True, new_customer=True)
         # trend_comparison_line_chart()
     
     with st.container(height=660):
         st.text('Sales by Product - Top 10')   
-        # horizontal_bar_chart_with_value()
+        horizontal_bar_chart_with_value(Ecom_Orderlinetable, col_1='ItemName')
     
     with st.container(height=660):
         st.text('Revenue by Coupon Code - Top 10')   
-        # horizontal_bar_chart_with_value()
+        horizontal_bar_chart_with_value(Ecom_Ordertable, col_1='Discount_Code')
 
 with tab2:
     with st.container(height=50):
@@ -222,15 +254,15 @@ with tab2:
     
     with st.container(height=600):
         st.text('Average Customer Value by Acquisition Month in 1/30/60/90/180 days')   
-        grouped_bar_chart_with_line_chart()
+        grouped_bar_chart_with_line_chart(Ecom_Ordertable)
 
     with st.container(height=600):
         st.text('Top 10 Average Customer Value by  Discount Code Coupon')   
-        horizontal_grouped_bar_chart()
+        # horizontal_grouped_bar_chart()
     
     with st.container(height=600):
         st.text('Average Customer Value by Marketing Channel over 1/30/60/90/180 days time period')   
-        horizontal_grouped_bar_chart()
+        horizontal_grouped_bar_chart_channel(Ecom_Ordertable)
 
 with tab3:
     with st.container(height=50):
@@ -244,25 +276,25 @@ with tab3:
     kpi_tile(kpi3_3,tile_text='Interval between 3rd and 4th Order', tile_label='', tile_value=new_customers,
                      tile_value_prefix='',delta_value=2,integer=True)
     
-    with st.container(height=600):
-        st.text('How Many Customers repeat?')   
-        grouped_bar_chart_with_line_chart()
+    # with st.container(height=600):
+    #     st.text('How Many Customers repeat?')   
+    #     grouped_bar_chart_with_line_chart()
 
-    with st.container(height=600):
-        st.text('Average Order Value at 1st Order, 2nd Order, 3rd Order, 4th Order')   
-        grouped_bar_chart_with_line_chart()
+    # with st.container(height=600):
+    #     st.text('Average Order Value at 1st Order, 2nd Order, 3rd Order, 4th Order')   
+    #     grouped_bar_chart_with_line_chart()
 
-    with st.container(height=600):
-        st.text('Repeat Order Intervals')   
-        grouped_bar_chart_with_line_chart()
+    # with st.container(height=600):
+    #     st.text('Repeat Order Intervals')   
+    #     grouped_bar_chart_with_line_chart()
 
-    with st.container(height=600):
-        st.text('Order count at 1st Order, 2nd Order, 3rd Order, 4th Order over months')   
-        grouped_bar_chart()
+    # with st.container(height=600):
+    #     st.text('Order count at 1st Order, 2nd Order, 3rd Order, 4th Order over months')   
+    #     grouped_bar_chart()
 
-    with st.container(height=600):
-        st.text('Customer count who purchased 1 Item, 2 Items, 3 items, 3+ items')   
-        grouped_bar_chart_with_line_chart()
+    # with st.container(height=600):
+    #     st.text('Customer count who purchased 1 Item, 2 Items, 3 items, 3+ items')   
+    #     grouped_bar_chart_with_line_chart()
 
 with tab4:
     with st.container(height=50):
@@ -284,12 +316,11 @@ with tab5:
 
     with st.container(height=600):
         st.text('Worst Channel Cohorts')
-        bar_chart_with_line_chart()
-
+        bar_chart_with_line_chart(worst_channel_cohort_agg, 'marketing_channel')
         
     with st.container(height=600):
         st.text('Worst City Cohorts')  
-        bar_chart_with_line_chart() 
+        bar_chart_with_line_chart(worst_city_cohort_agg, 'CustomerCity')
         
 with tab6:
     with st.container(height=50):
@@ -297,14 +328,15 @@ with tab6:
 
     with st.container(height=600):
         st.text('Customer Retention by First Order')
-        #df here
+        st.dataframe(customer_cohort_retention_1a, use_container_width=True)
         
     with st.container(height=600):
         st.text('Retention Cohorts')
-        #df here 
+        st.dataframe(customer_cohort_retention_1b, use_container_width=True)
 
     with st.container(height=600):
         st.text('Customer Average monthly Revenue')
+        st.dataframe(customer_cohort_retention_1c, use_container_width=True)
         # df here
 
 with tab7:
@@ -312,7 +344,9 @@ with tab7:
         st.text('Cohort Analysis')
 
     with st.container(height=600):
-        st.text('Customer Retention by City')   
+        st.text('Customer Retention by City')
+        customer_cohort_retention_2a = customer_cohort_retention_2a.sort_values(by='month_0_count', ascending=False).reset_index(drop=True)
+        st.dataframe(customer_cohort_retention_2a)
         
     with st.container(height=600):
         st.text('Customer Percentage Retention by City')  
@@ -329,12 +363,21 @@ with tab8:
 
     with st.container(height=600):
         st.text('Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days')   
-        pie_chart()
+        # RecencyBucket_rev
+        pie_chart(RecencyBucket_rev, 'RecencyBucket')
         
-    with st.container(height=600):
-        st.text('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+') 
-        pie_chart() 
+    with st.container(height=620):
+        st.text('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+')
+        col_1,col_2 = st.columns(2)
+        with col_1:
+            channel = st.selectbox('',Customer_attribute_4yr_rev['marketing_channel'].unique(), key='tab_8_1')
+        with col_2:
+            tier = st.selectbox('',Customer_attribute_4yr_rev['Tier'].unique(), key='tab_8_2')
+        Customer_attribute_4yr_rev = Customer_attribute_4yr_rev[Customer_attribute_4yr_rev['marketing_channel']==channel]
+        Customer_attribute_4yr_rev = Customer_attribute_4yr_rev[Customer_attribute_4yr_rev['Tier']==tier]
+
+        pie_chart(Customer_attribute_4yr_rev,'FrequencyBucket') 
 
     with st.container(height=600):
         st.text('Audience Split by 4 AOV quartiles')
-        pie_chart()
+        pie_chart(AOVquart,'quartile')
