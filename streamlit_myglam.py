@@ -423,7 +423,11 @@ with tab4:
         # df_demo = pd.DataFrame(np.random.randn(50, 20), columns=("col %d" % i for i in range(20)))
         # st.dataframe(df_demo)  
         #dataframe here
-        data = pd.read_csv('src/data/df.csv')
+        data_1 = pd.read_csv('src/data/df_part1.csv')
+        data_2 = pd.read_csv('src/data/df_part2.csv')
+        data_3 = pd.read_csv('src/data/df_part3.csv')
+        data = pd.concat([data_1, data_2, data_3], ignore_index=True)
+
         data['Total_price'] = data['ItemQuantity'] * data['Item_UnitPrice']
         data = data.groupby('ItemName').agg({'Total_price':'mean', 'OrderID':'count'}).sort_values(by='Total_price', ascending=False)
         data['avg order value'] = data['Total_price']/data['OrderID']
