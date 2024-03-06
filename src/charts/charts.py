@@ -92,7 +92,7 @@ def trend_comparison_line_chart(df,df_delta,date_col, col_1 ,x_axis_title, y_axi
     granularity_dict = {'Daily': 'D','Weekly': 'W', 'Monthly': 'ME', 'Yearly': 'YE'}
     _,_,_,col = st.columns(4)
     with col:
-        gran = st.selectbox('', ('Daily', 'Weekly', 'Monthly', 'Yearly'), key=key)
+        gran = st.selectbox('Granularity', ('Daily', 'Weekly', 'Monthly', 'Yearly'), key=key)
 
     if df.index.name != date_col and df_delta.index.name != date_col:
         df.set_index(date_col, inplace=True)
@@ -139,7 +139,7 @@ def trend_comparison_line_chart_aov(df,df_delta,date_col, col_1 ,col_2,x_axis_ti
     granularity_dict = {'Daily': 'D','Weekly': 'W', 'Monthly': 'ME', 'Yearly': 'YE'}
     _,_,_,col = st.columns(4)
     with col:
-        gran = st.selectbox('', ('Monthly', 'Yearly'), key=key)
+        gran = st.selectbox('Granularity', ('Monthly', 'Yearly'), key=key)
     if df.index.name != date_col and df_delta.index.name != date_col:
         df.set_index(date_col, inplace=True)
         df_delta.set_index(date_col, inplace=True)
@@ -204,65 +204,24 @@ def grouped_bar_chart():
     )
     ])
 
-def grouped_bar_chart_with_line_chart(data):
-    # np.random.seed(42)
 
-    # random_x= np.random.randint(1,101,100) 
-    # random_y= np.random.randint(1,101,100)
-    
-    data_cv1 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=2)]
-    data_price_cv1 = data_cv1[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
-    data_count_cv1 = data_cv1[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
-    x = data_price_cv1.index.to_list()
+def grouped_bar_chart_with_line_chart_2(data):
+    Ecom_Ordertable = data
+    Ecom_Ordertable.reset_index(inplace=True)
+    Ecom_Ordertable['Order_interval'] = (pd.to_datetime(Ecom_Ordertable['OrderDate']) - pd.to_datetime(Ecom_Ordertable['FirstOrderDate'])).dt.days
 
-    data_cv30 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=31)]
-    data_price_cv30 = data_cv30[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
-    data_count_cv30 = data_cv30[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+    Ecom_Ordertable['Month'] = pd.to_datetime(Ecom_Ordertable['OrderDate']).dt.strftime('%Y-%m')
 
-    data_cv60 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=61)]
-    data_price_cv60 = data_cv60[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
-    data_count_cv60 = data_cv60[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
+    Ecom_Ordertable['CV_1'] = np.where(Ecom_Ordertable['Order_interval'] < 2, Ecom_Ordertable['Total_Price'], 0)
+    Ecom_Ordertable['CV_30'] = np.where(Ecom_Ordertable['Order_interval'] < 31, Ecom_Ordertable['Total_Price'], 0)
+    Ecom_Ordertable['CV_60'] = np.where(Ecom_Ordertable['Order_interval'] < 61, Ecom_Ordertable['Total_Price'], 0)
+    Ecom_Ordertable['CV_90'] = np.where(Ecom_Ordertable['Order_interval'] < 91, Ecom_Ordertable['Total_Price'], 0)
+    Ecom_Ordertable['CV_180'] = np.where(Ecom_Ordertable['Order_interval'] < 181, Ecom_Ordertable['Total_Price'], 0)
+    plot = px.bar(Ecom_Ordertable.groupby(['Month'])[['CV_1',
+       'CV_30', 'CV_60', 'CV_90', 'CV_180']].mean(),
+       barmode='group'
+      )
 
-    data_cv90 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=91)]
-    data_price_cv90 = data_cv90[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
-    data_count_cv90 = data_cv90[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
-
-    data_cv180 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=181)]
-    data_price_cv180 = data_cv180[['Total_Price', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').sum()
-    data_count_cv180 = data_cv180[['CustomerID', 'FirstOrderDate']].set_index('FirstOrderDate').resample('M').nunique()
-
-    plot = go.Figure(data=[go.Bar(
-        name = 'CV1',
-        x = x,
-        y = [a/b for a,b in zip(data_price_cv1['Total_Price'].to_list(),data_count_cv1['CustomerID'].to_list())], 
-    ),
-        go.Bar(
-        name = 'CV30',
-        x = x,
-        y = [a/b for a,b in zip(data_price_cv30['Total_Price'].to_list(),data_count_cv30['CustomerID'].to_list())], 
-    ),
-        go.Bar(
-        name = 'CV60',
-        x = x,
-        y = [a/b for a,b in zip(data_price_cv60['Total_Price'].to_list(),data_count_cv60['CustomerID'].to_list())], 
-    ),
-        go.Bar(
-        name = 'CV90',
-        x = x,
-        y = [a/b for a,b in zip(data_price_cv90['Total_Price'].to_list(),data_count_cv90['CustomerID'].to_list())], 
-    ),
-        go.Bar(
-        name = 'CV180',
-        x = x,
-        y = [a/b for a,b in zip(data_price_cv180['Total_Price'].to_list(),data_count_cv180['CustomerID'].to_list())], 
-    ),
-    #     go.Line(
-    #     name= 'Total customers',
-    #     x=x,
-    #     y=data_count_cv1['CustomerID'].to_list(), #values here 
-    # )
-    ])
-                    
     st.plotly_chart(plot, use_container_width=True)
 
 def bar_chart_with_line_chart(data, var):
