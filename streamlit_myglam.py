@@ -120,7 +120,7 @@ with col1:
     header_left('E-Commerce Executive Dashboard', 44)
 with col2:
     option = st.selectbox('',
-        ('This Year', 'This Quarter', 'This Month', 'Last 7 Days', 'Last 30 Days', 'All Data', 'Custom Range'))
+        ('This Month', 'This Quarter', 'This Year', 'Last 7 Days', 'Last 30 Days', 'All Data', 'Custom Range'))
 
 if option == 'Last 7 Days': 
     Ecom_Ordertable,Ecom_Ordertable_delta = previous_time_delta_percentage(dataframe=Ecom_Ordertable, date_today=date_today,option=option)
