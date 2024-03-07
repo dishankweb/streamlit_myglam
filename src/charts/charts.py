@@ -184,41 +184,20 @@ def trend_comparison_line_chart_aov(df,df_delta,date_col, col_1 ,col_2,x_axis_ti
     # fig.show()
     st.plotly_chart(fig, use_container_width=True)
 
-def grouped_bar_chart():
-    np.random.seed(42)
 
-    random_x= np.random.randint(1,101,100) 
-    random_y= np.random.randint(1,101,100)
+def grouped_bar_chart_with_line_chart_2(data, group_by):
+    # Ecom_Ordertable = data
+    data.reset_index(inplace=True)
+    data['Order_interval'] = (pd.to_datetime(data['OrderDate']) - pd.to_datetime(data['FirstOrderDate'])).dt.days
 
-    x = ['A', 'B', 'C', 'D']
+    data['Month'] = pd.to_datetime(data['OrderDate']).dt.strftime('%Y-%m')
 
-    plot = go.Figure(data=[go.Bar(
-        name = 'Data 1',
-        x = x,
-        y = [100, 200, 500, 673],
-    ),
-        go.Bar(
-        name = 'Data 2',
-        x = x,
-        y = [56, 123, 982, 213],
-    )
-    ])
-
-
-def grouped_bar_chart_with_line_chart_2(data):
-    Ecom_Ordertable = data
-    Ecom_Ordertable.reset_index(inplace=True)
-    Ecom_Ordertable['Order_interval'] = (pd.to_datetime(Ecom_Ordertable['OrderDate']) - pd.to_datetime(Ecom_Ordertable['FirstOrderDate'])).dt.days
-
-    Ecom_Ordertable['Month'] = pd.to_datetime(Ecom_Ordertable['OrderDate']).dt.strftime('%Y-%m')
-
-    Ecom_Ordertable['CV_1'] = np.where(Ecom_Ordertable['Order_interval'] < 2, Ecom_Ordertable['Total_Price'], 0)
-    Ecom_Ordertable['CV_30'] = np.where(Ecom_Ordertable['Order_interval'] < 31, Ecom_Ordertable['Total_Price'], 0)
-    Ecom_Ordertable['CV_60'] = np.where(Ecom_Ordertable['Order_interval'] < 61, Ecom_Ordertable['Total_Price'], 0)
-    Ecom_Ordertable['CV_90'] = np.where(Ecom_Ordertable['Order_interval'] < 91, Ecom_Ordertable['Total_Price'], 0)
-    Ecom_Ordertable['CV_180'] = np.where(Ecom_Ordertable['Order_interval'] < 181, Ecom_Ordertable['Total_Price'], 0)
-    plot = px.bar(Ecom_Ordertable.groupby(['Month'])[['CV_1',
-       'CV_30', 'CV_60', 'CV_90', 'CV_180']].mean(),
+    data['CV_1'] = np.where(data['Order_interval'] < 2, data['Total_Price'], 0)
+    data['CV_30'] = np.where(data['Order_interval'] < 31, data['Total_Price'], 0)
+    data['CV_60'] = np.where(data['Order_interval'] < 61, data['Total_Price'], 0)
+    data['CV_90'] = np.where(data['Order_interval'] < 91, data['Total_Price'], 0)
+    data['CV_180'] = np.where(data['Order_interval'] < 181, data['Total_Price'], 0)
+    plot = px.bar(data.groupby([group_by])[['CV_1','CV_30', 'CV_60', 'CV_90', 'CV_180']].mean(),
        barmode='group'
       )
 
@@ -246,109 +225,50 @@ def bar_chart_with_line_chart(data, var,x_title):
         yaxis2=dict(title='Number of Customers', side='right')
     )
 
-    # plot = go.Figure(data=[go.Bar(
-    #     name = 'CV90',
-    #     x = x,
-    #     y = data['CV90'].to_list(),
-    # ),
-    #     go.Line(
-    #     name= 'CustomerID',
-    #     x=x,
-    #     y=data['customer_count'].to_list(),
-    # )
-    # ])
+    plot = go.Figure(data=[go.Bar(
+        name = 'CV90',
+        x = x,
+        y = data['CV90'].to_list(),
+    ),
+        go.Line(
+        name= 'CustomerID',
+        x=x,
+        y=data['customer_count'].to_list(),
+    )
+    ])
                     
     st.plotly_chart(fig, use_container_width=True)
 
 
-def horizontal_grouped_bar_chart():
-    np.random.seed(42)
-
-    random_x= np.random.randint(1,101,100) 
-    random_y= np.random.randint(1,101,100)
-
-    x = ['A', 'B', 'C', 'D']
-
-    plot = go.Figure(data=[go.Bar(
-        name = 'Data 1',
-        x = [100, 200, 500, 673],
-        y = x,
-        orientation='h'
-    ),
-        go.Bar(
-        name = 'Data 2',
-        x = [56, 123, 982, 213],
-        y = x,
-        orientation='h'
-    )
-    ])
-                    
-    st.plotly_chart(plot, use_container_width=True)
-
-def horizontal_grouped_bar_chart_channel(data):
-    # x = ['A', 'B', 'C', 'D']
-
-    data_cv1 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=2)]
-    data_price_cv1 = data_cv1[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
-    data_count_cv1 = data_cv1[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
-    x = data_price_cv1.index.to_list()
-
-    data_cv30 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=31)]
-    data_price_cv30 = data_cv30[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
-    data_count_cv30 = data_cv30[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
-
-    data_cv60 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=61)]
-    data_price_cv60 = data_cv60[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
-    data_count_cv60 = data_cv60[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
-
-    data_cv90 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=91)]
-    data_price_cv90 = data_cv90[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
-    data_count_cv90 = data_cv90[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
-
-    data_cv180 = data[data.index-data['FirstOrderDate']<datetime.timedelta(days=181)]
-    data_price_cv180 = data_cv180[['Total_Price', 'marketing_channel']].groupby('marketing_channel').sum()
-    data_count_cv180 = data_cv180[['CustomerID', 'marketing_channel']].groupby('marketing_channel').nunique()
-    
-    plot = go.Figure(data=[go.Bar(
-        name = 'CV1',
-        x = [a/b for a,b in zip(data_price_cv1['Total_Price'].to_list(),data_count_cv1['CustomerID'].to_list())],
-        y = x,
-        orientation='h'
-    ),
-        go.Bar(
-        name = 'CV30',
-        x = [a/b for a,b in zip(data_price_cv30['Total_Price'].to_list(),data_count_cv30['CustomerID'].to_list())],
-        y = x,
-        orientation='h'
-    ),
-        go.Bar(
-        name = 'CV60',
-        x = [a/b for a,b in zip(data_price_cv60['Total_Price'].to_list(),data_count_cv60['CustomerID'].to_list())],
-        y = x,
-        orientation='h'
-    ),
-        go.Bar(
-        name = 'CV90',
-        x = [a/b for a,b in zip(data_price_cv90['Total_Price'].to_list(),data_count_cv90['CustomerID'].to_list())],
-        y = x,
-        orientation='h'
-    ),
-        go.Bar(
-        name = 'CV180',
-        x = [a/b for a,b in zip(data_price_cv180['Total_Price'].to_list(),data_count_cv180['CustomerID'].to_list())],
-        y = x,
-        orientation='h'
-    ),
-    ])
-                    
-    st.plotly_chart(plot, use_container_width=True)    
-
-def pie_chart(df, var):
+def pie_chart(df, var, desired_order):
     cat_pie = px.pie(data_frame=df.groupby(var)['CustomerID'].nunique().to_frame().reset_index(),
                     names=var,
                     hole=0.5,
                     color=var,
                     values='CustomerID',
+                    category_orders={var: desired_order}
                 )
     # cat_pie.update_layout(showlegend=True)
     st.plotly_chart(cat_pie, theme='streamlit', use_container_width=True)
+
+def grouped_bar_chart(data, index, option, value_column_name,column_name=None, agg_func='mean', desired_order=None):    
+    plot = px.bar(data.pivot_table(index=index, 
+                                columns=column_name,
+                                values=value_column_name,
+                                aggfunc= agg_func
+                                )[desired_order],
+    
+    barmode='group')
+    st.plotly_chart(plot, use_container_width=True)
+
+def grouped_bar_chart_groupby(data, group_by, column_name, index, option, desired_order=None):
+    plot = px.bar(data.groupby(group_by)[column_name].value_counts().reset_index(),
+    x=index,
+    y='count',
+    color=column_name,
+    barmode='group',
+    category_orders={column_name: desired_order}
+    )
+    st.plotly_chart(plot, use_container_width=True)
+
+
