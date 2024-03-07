@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import datetime
 from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
 
 # Bar and line chart in one
 def default_chart(chart_title,chart_key,chart_df,chart_height=630, radio_horizontal=True, color_theme='streamlit'):
