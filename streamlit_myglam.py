@@ -6,6 +6,7 @@ import random
 import numpy as np
 import math
 import datetime
+import matplotlib
 import uuid
 # import matplotlib.pyplot as plt
 import altair as alt
