@@ -7,7 +7,7 @@ import numpy as np
 import math
 import datetime
 import uuid
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import altair as alt
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta
@@ -416,70 +416,59 @@ with tab5: #complete
     header_chart('Worst City Cohorts')
     bar_chart_with_line_chart(worst_city_cohort_agg, 'CustomerCity', 'City')
         
-with tab6:
-    # st.text('Cohort Analysis')
+with tab6: 
+
     header('Cohort Analysis', 28)
+    header_chart('Customer Retention by First Order')
+    customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']>(date_today-relativedelta(months=12))]
+    customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']<date_today].reset_index(drop=True)
+    customer_cohort_retention_1a['first_month'] = customer_cohort_retention_1a['first_month'].apply(lambda x: pd.to_datetime(x).date())
+    st.dataframe(customer_cohort_retention_1a.style.background_gradient(), use_container_width=True)
+    
+    header_chart('Retention Cohorts')
+    customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']>(date_today-relativedelta(months=12))]
+    customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']<date_today].reset_index(drop=True)
+    customer_cohort_retention_1b['first_month'] = customer_cohort_retention_1b['first_month'].apply(lambda x: pd.to_datetime(x).date())
+    st.dataframe(customer_cohort_retention_1b.style.background_gradient(), use_container_width=True)
 
-    with st.container(height=600):
-        # st.text('Customer Retention by First Order')
-        header_chart('Customer Retention by First Order')
-        customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']>(date_today-relativedelta(months=12))]
-        customer_cohort_retention_1a = customer_cohort_retention_1a[customer_cohort_retention_1a['first_month']<date_today].reset_index(drop=True)
-        customer_cohort_retention_1a['first_month'] = customer_cohort_retention_1a['first_month'].apply(lambda x: pd.to_datetime(x).date())
-        st.dataframe(customer_cohort_retention_1a.style.background_gradient(), use_container_width=True)
-        
-    with st.container(height=600):
-        # st.text('Retention Cohorts')
-        header_chart('Retention Cohorts')
-        customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']>(date_today-relativedelta(months=12))]
-        customer_cohort_retention_1b = customer_cohort_retention_1b[customer_cohort_retention_1b['first_month']<date_today].reset_index(drop=True)
-        customer_cohort_retention_1b['first_month'] = customer_cohort_retention_1b['first_month'].apply(lambda x: pd.to_datetime(x).date())
-        st.dataframe(customer_cohort_retention_1b.style.background_gradient(), use_container_width=True)
-
-    with st.container(height=600):
-        # st.text('Customer Average monthly Revenue')
-        header_chart('Customer Average monthly Revenue')
-        customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']>(date_today-relativedelta(months=12))]
-        customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']<date_today].reset_index(drop=True)
-        customer_cohort_retention_1c['first_month'] = customer_cohort_retention_1c['first_month'].apply(lambda x: pd.to_datetime(x).date())
-        st.dataframe(customer_cohort_retention_1c.style.background_gradient(), use_container_width=True)
-        # df here
+    header_chart('Customer Average monthly Revenue')
+    customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']>(date_today-relativedelta(months=12))]
+    customer_cohort_retention_1c = customer_cohort_retention_1c[customer_cohort_retention_1c['first_month']<date_today].reset_index(drop=True)
+    customer_cohort_retention_1c['first_month'] = customer_cohort_retention_1c['first_month'].apply(lambda x: pd.to_datetime(x).date())
+    st.dataframe(customer_cohort_retention_1c.style.background_gradient(), use_container_width=True)
+    # df here
 
 with tab7:
    
     # st.text('Cohort Analysis')
     header('Cohort Analysis', 28)
 
-    with st.container(height=600):
-        # st.text('Customer Retention by City')
-        header_chart('Customer Retention by City')
-        customer_cohort_retention_2a = customer_cohort_retention_2a.sort_values(by='month_0_count', ascending=False).reset_index(drop=True)
-        st.dataframe(customer_cohort_retention_2a.style.background_gradient())
-        
-    with st.container(height=600):
-        # st.text('Customer Percentage Retention by City')
-        header_chart('Customer Percentage Retention by City')  
-
-    with st.container(height=600):
-        # st.text('Channel-wise Cohorts')  
-       header_chart('Channel-wise Cohorts')
+    # st.text('Customer Retention by City')
+    header_chart('Customer Retention by City')
+    customer_cohort_retention_2a = customer_cohort_retention_2a.sort_values(by='month_0_count', ascending=False).reset_index(drop=True)
+    st.dataframe(customer_cohort_retention_2a.style.background_gradient(), use_container_width=True)
     
-    with st.container(height=600):
-        # st.text('Channel-wise Cohorts - Customer count')
-        header_chart('Channel-wise Cohorts - Customer count')
+    # st.text('Customer Percentage Retention by City')
+    header_chart('Customer Percentage Retention by City')  
+
+
+    # st.text('Channel-wise Cohorts')  
+    header_chart('Channel-wise Cohorts')
+
+
+    # st.text('Channel-wise Cohorts - Customer count')
+    header_chart('Channel-wise Cohorts - Customer count')
 
 with tab8: #complete
     
     # st.text('Audience Overview')
     header('Audience Overview', 28)
 
-
     # st.text('Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days')   
     header_chart('Audience Split by Recency Buckets - 0-7,7-15,15-30,30-90, 90-180, >180 days')
     # RecencyBucket_rev
     pie_chart(RecencyBucket_rev, 'RecencyBucket', desired_order=['0-7', '7-15', '15-30', '30-90', '90-180', '>180'])
     
-
     # st.text('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+')
     header_chart('Audience Split by Frequency Buckets - 0, 1, 2, 3, 4, 4+')
     col_1,col_2 = st.columns(2)
@@ -491,7 +480,6 @@ with tab8: #complete
     Customer_attribute_4yr_rev = Customer_attribute_4yr_rev[Customer_attribute_4yr_rev['Tier']==tier]
 
     pie_chart(Customer_attribute_4yr_rev,'FrequencyBucket', desired_order=['0','1','2','3','4','4+']) 
-
 
     # st.text('Audience Split by 4 AOV quartiles')
     header_chart('Audience Split by 4 AOV quartiles')
